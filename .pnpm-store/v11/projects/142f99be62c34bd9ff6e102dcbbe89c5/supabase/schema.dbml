@@ -1,0 +1,153 @@
+// ============================================================
+// CCTS · Nghiệm thu Trạm đổi pin · BM03 (Phụ lục 04)
+// Dán vào https://dbdiagram.io/d
+//
+// Lưu ý: DBML không diễn tả được `nulls not distinct`, các
+// ràng buộc CHECK, và chính sách RLS. Xem schema.sql cho bản
+// đầy đủ. File này chỉ để nhìn quan hệ giữa các bảng.
+// ============================================================
+
+Table profiles {
+  id         uuid [pk, note: 'bằng auth.users.id']
+  ho_ten     text [not null]
+  chuc_vu    text [not null]
+  role       text [not null, default: 'se', note: 'se | admin']
+  created_at timestamptz [not null, default: `now()`]
+
+  Note: 'Kỹ sư hiện trường. Tên và chức vụ tự điền vào BM03 mục 2.'
+}
+
+Table stations {
+  id                 uuid [pk, default: `gen_random_uuid()`]
+  ma_tram            text [not null, unique]
+  ten_tram           text [not null]
+  dia_chi            text [not null]
+  xa_phuong          text
+  tinh_tp            text
+  lat                double [not null]
+  lng                double [not null]
+  thiet_ke_dien_hinh text
+  so_tu              smallint [not null, note: '1..6']
+  nha_thau           text [not null]
+  nha_thau_phone     text [not null]
+  created_at         timestamptz [not null, default: `now()`]
+
+  indexes {
+    ma_tram [unique]
+    tinh_tp
+  }
+  Note: 'Danh sách Trạm nạp từ BM01 của Bên A. Chỉ đọc với kỹ sư.'
+}
+
+Table station_cabinets {
+  id         uuid [pk, default: `gen_random_uuid()`]
+  station_id uuid [not null]
+  vi_tri     smallint [not null, note: '1..6, cột SN1..SN6 của BM01']
+  sn         text [not null]
+
+  indexes {
+    (station_id, vi_tri) [unique]
+  }
+  Note: 'Tủ mà BM01 khai báo. Không chứa FW hay trạng thái online.'
+}
+
+Table inspections {
+  id                       uuid [pk, default: `gen_random_uuid()`]
+  station_id               uuid [not null]
+  inspector_id             uuid [not null]
+  luot_thu                 smallint [not null, default: 1]
+  so_bien_ban              text [not null, unique]
+  status                   text [not null, default: 'draft', note: 'draft | issued']
+
+  doi_chieu                jsonb [not null, default: `'{}'`, note: 'BM03 mục 1, 6 hàng']
+
+  nha_thau                 text [not null]
+  nguoi_lap_ho_so          text [not null]
+  nha_thau_phone           text [not null]
+
+  nguoi_nghiem_thu_ten     text [not null]
+  nguoi_nghiem_thu_chuc_vu text [not null]
+  tu_thoi_gian             timestamptz [not null]
+  den_thoi_gian            timestamptz [not null]
+
+  ket_luan                 text [note: 'dat | khong_dat | khong_du_dieu_kien | sai_thong_tin | khac']
+  ket_luan_ghi_chu         text
+  yeu_cau_khac_phuc        text [note: 'BM03 mục 5']
+  ngay_phat_hanh           timestamptz
+  created_at               timestamptz [not null, default: `now()`]
+
+  indexes {
+    (station_id, luot_thu) [unique]
+    so_bien_ban [unique]
+    (status, ngay_phat_hanh)
+    nha_thau
+  }
+  Note: 'Một hàng = một BM03 = một Lượt nghiệm thu (Điều 7).'
+}
+
+Table inspection_cabinets {
+  id            uuid [pk, default: `gen_random_uuid()`]
+  inspection_id uuid [not null]
+  cabinet_id    uuid [note: 'NULL = SN không có trong BM01']
+  vi_tri        smallint [not null, note: '1..6']
+  sn            text [not null]
+  loai_tu       smallint [note: '6 | 12 ngăn']
+  fw_version    text [note: 'Phiên bản FW hiển thị']
+  online        boolean [not null, default: false]
+
+  indexes {
+    (inspection_id, vi_tri) [unique]
+  }
+  Note: 'BM02 Phần 2. Ảnh chụp tình trạng Tủ tại thời điểm lượt này. FW và online là giá trị thời điểm, không phải thuộc tính của Tủ.'
+}
+
+Table item_results {
+  id            uuid [pk, default: `gen_random_uuid()`]
+  inspection_id uuid [not null]
+  code          text [not null, note: 'A1..H3']
+  cabinet_id    uuid [note: 'chỉ B1, B2']
+  ket_qua       text [not null, note: 'dat | khong_dat | na']
+  ghi_chu       text
+  gia_tri_do    jsonb [note: 'chỉ C5, C6 — mảng GiaTriDo[]']
+  created_at    timestamptz [not null, default: `now()`]
+
+  indexes {
+    (inspection_id, code, cabinet_id) [unique, note: 'PHẢI dùng NULLS NOT DISTINCT']
+    inspection_id
+  }
+  Note: 'BM03 mục 3. 27 mã, riêng B1/B2 nhân theo số Tủ.'
+}
+
+Table evidence {
+  id               uuid [pk, default: `gen_random_uuid()`]
+  item_result_id   uuid [not null]
+  loai             text [not null, note: 'anh | video | tai_lieu']
+  storage_path     text [not null, unique]
+  sha256           text [not null]
+  size_bytes       bigint [not null]
+  mime             text [not null]
+  width            integer
+  height           integer
+  duration_seconds "numeric(5,2)"
+  taken_at         timestamptz [note: 'EXIF DateTimeOriginal']
+  lat              double [note: 'EXIF GPS']
+  lng              double
+  created_at       timestamptz [not null, default: `now()`]
+
+  indexes {
+    storage_path [unique]
+    item_result_id
+  }
+  Note: 'Một hàng một tệp. Bytes nằm trong bucket, không nằm trong Postgres.'
+}
+
+// ------------------------- quan hệ -------------------------
+
+Ref: station_cabinets.station_id       > stations.id            [delete: cascade]
+Ref: inspections.station_id            > stations.id            [delete: restrict]
+Ref: inspections.inspector_id          > profiles.id            [delete: restrict]
+Ref: inspection_cabinets.inspection_id > inspections.id         [delete: cascade]
+Ref: inspection_cabinets.cabinet_id    > station_cabinets.id    [delete: set null]
+Ref: item_results.inspection_id        > inspections.id         [delete: cascade]
+Ref: item_results.cabinet_id           > inspection_cabinets.id [delete: cascade]
+Ref: evidence.item_result_id           > item_results.id        [delete: cascade]

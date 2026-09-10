@@ -1,0 +1,114 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   CCTS · bảng màu
+   Xanh rêu công nghiệp làm màu thương hiệu, cố ý tránh xanh lá và đỏ vì hai
+   màu đó đã dành cho kết quả Đạt / Không đạt. Nền hơi ngả xám xanh, tương phản
+   cao để đọc được ngoài nắng.
+--------------------------------------------------------------------------- */
+:root {
+  --paper: #eceee7;
+  --card: #ffffff;
+  --card-2: #f6f7f2;
+  --ink: #161a16;
+  --ink-2: #565d55;
+  --ink-3: #868d84;
+  --line: #d7dbd0;
+  --line-2: #b7bdad;
+
+  --brand: #0c5560;
+  --brand-2: #0a444d;
+  --brand-soft: #d9e9ea;
+  --on-brand: #ffffff;
+
+  --ok: #197a41;
+  --ok-soft: #dbf0e1;
+  --bad: #b02c21;
+  --bad-soft: #fae0dc;
+  --na: #6c736a;
+  --na-soft: #e4e7de;
+  --warn: #9c5600;
+  --warn-soft: #f9ecd3;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-card: var(--card);
+  --color-card-2: var(--card-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-brand: var(--brand);
+  --color-brand-2: var(--brand-2);
+  --color-brand-soft: var(--brand-soft);
+  --color-on-brand: var(--on-brand);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --color-na: var(--na);
+  --color-na-soft: var(--na-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+
+  --font-sans: var(--font-bvp), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex), ui-monospace, "SFMono-Regular", monospace;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  overscroll-behavior-y: none;
+}
+
+/* Không cho iOS zoom khi focus input: mọi ô nhập tối thiểu 16px. */
+input,
+textarea,
+select,
+button {
+  font: inherit;
+  font-size: 16px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+.safe-b {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+    color: #000;
+  }
+  .sheet {
+    box-shadow: none !important;
+    border: 0 !important;
+    max-width: none !important;
+  }
+}
