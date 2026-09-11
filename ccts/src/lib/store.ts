@@ -253,7 +253,10 @@ function mapInspection(r: RowInspection): Inspection {
     luot_thu: r.luot_thu,
     so_bien_ban: r.so_bien_ban,
     status: r.status,
-    doi_chieu: r.doi_chieu,
+    // Trộn với mặc định: đổi khoá RECONCILE_FIELDS (vd. tách ma_ten_tram thành
+    // ma_tram/ten_tram) không tự vá dữ liệu jsonb cũ đã lưu - thiếu khoá mới
+    // sẽ crash ở .bm02/.khop nếu không có bước này.
+    doi_chieu: { ...emptyDoiChieu(), ...r.doi_chieu },
     nha_thau: r.nha_thau,
     nguoi_lap_ho_so: r.nguoi_lap_ho_so,
     nha_thau_phone: r.nha_thau_phone,
@@ -751,6 +754,11 @@ export interface Blocker {
 /** Điều kiện chặn nộp biên bản. */
 export function blockers(insp: Inspection): Blocker[] {
   const out: Blocker[] = [];
+
+  const chuaDoiChieu = RECONCILE_FIELDS.filter(
+    (f) => f.required && !insp.doi_chieu[f.key].bm02.trim(),
+  ).length;
+  if (chuaDoiChieu) out.push({ buoc: 1, text: chuaDoiChieu + ' hàng đối chiếu chưa điền' });
 
   // Nhà thầu giờ ghi ở hàng đối chiếu bước 1, không còn ô riêng.
   if (!insp.nguoi_lap_ho_so.trim() || !insp.nha_thau_phone.trim())
