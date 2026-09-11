@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { use, useEffect } from 'react';
+import { use, useEffect, useState } from 'react';
 import { AppBar, BottomBar, Button, Loading, Page } from '@/components/ui';
 import {
   CHECKLIST,
@@ -11,7 +11,7 @@ import {
   RECONCILE_FIELDS,
   itemsInGroup,
 } from '@/lib/checklist';
-import { getResult, inspectionById, useDB } from '@/lib/store';
+import { getResult, inspectionById, taiBienBanTheoId, useDB } from '@/lib/store';
 import type { Inspection } from '@/lib/types';
 
 const dt = (s: string | null) =>
@@ -29,15 +29,23 @@ export default function InspectionSheetPage({ params }: { params: Promise<{ id: 
   const { id } = use(params);
   const db = useDB();
   const router = useRouter();
+  // Bộ nhớ mặc định chỉ có bản nháp hiện tại - mở biên bản cũ từ lịch sử phải
+  // nạp thêm từ máy chủ trước khi kết luận "không tìm thấy".
+  const [daNap, setDaNap] = useState(false);
 
   useEffect(() => {
     if (db && !db.session) router.replace('/login');
   }, [db, router]);
 
+  useEffect(() => {
+    if (db?.session) void taiBienBanTheoId(id).then(() => setDaNap(true));
+  }, [db?.session, id]);
+
   if (!db || !db.session) return <Loading />;
 
   const insp = inspectionById(id);
-  if (!insp)
+  if (!insp) {
+    if (!daNap) return <Loading />;
     return (
       <>
         <AppBar title="Không tìm thấy biên bản" back="/" />
@@ -46,7 +54,7 @@ export default function InspectionSheetPage({ params }: { params: Promise<{ id: 
         </Page>
       </>
     );
-
+  }
 
   return (
     <>

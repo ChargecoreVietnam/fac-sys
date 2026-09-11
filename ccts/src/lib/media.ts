@@ -1,15 +1,12 @@
 'use client';
 
 /**
- * Đọc tệp bằng chứng ngay trên máy: kích thước ảnh, thời lượng video, và
- * cảnh báo quy cách theo Phụ lục 01.
+ * Đọc tệp bằng chứng ngay trên máy: kích thước ảnh, thời lượng video.
  *
  * Băm SHA-256 tại đây luôn vì evidence.sha256 là cột bắt buộc.
  *
- * ponytail: chưa nén ảnh và chưa đọc toạ độ EXIF. Thêm browser-image-compression
- * và exifr khi ảnh hiện trường quá nặng hoặc cần đối chiếu vị trí chụp.
+ * ponytail: chưa đọc toạ độ EXIF. Thêm exifr khi cần đối chiếu vị trí chụp.
  */
-import { MIN_PHOTO_HEIGHT, MIN_PHOTO_WIDTH } from './checklist';
 import type { EvidenceMeta } from './types';
 
 /** Cạnh dài tối đa sau khi nén; bằng đúng quy cách 1920 nên không phạm chuẩn. */
@@ -99,7 +96,6 @@ export async function readEvidence(
   let width: number | null = null;
   let height: number | null = null;
   let duration: number | null = null;
-  let canh_bao: string | null = null;
 
   if (loai === 'anh') {
     const s = await imageSize(url0);
@@ -107,10 +103,6 @@ export async function readEvidence(
       width = s.w;
       height = s.h;
       tep = await nenAnh(file, s.w, s.h);
-      const nho = Math.min(s.w, s.h) < Math.min(MIN_PHOTO_WIDTH, MIN_PHOTO_HEIGHT);
-      if (nho)
-        canh_bao =
-          'Ảnh ' + s.w + '×' + s.h + ', dưới mức ' + MIN_PHOTO_WIDTH + '×' + MIN_PHOTO_HEIGHT;
     }
   } else if (loai === 'video') {
     const v = await videoInfo(url0);
@@ -159,7 +151,6 @@ export async function readEvidence(
         taken_at: new Date(tep.lastModified).toISOString(),
         lat: null,
         lng: null,
-        canh_bao,
       },
     };
   }
@@ -181,7 +172,6 @@ export async function readEvidence(
       taken_at: new Date(file.lastModified).toISOString(),
       lat: null,
       lng: null,
-      canh_bao,
     },
   };
 }

@@ -79,8 +79,6 @@ export interface EvidenceMeta {
   taken_at: string | null;
   lat: number | null;
   lng: number | null;
-  /** Cảnh báo quy cách, ví dụ ảnh dưới 1920x1080. Không chặn lưu. */
-  canh_bao: string | null;
 }
 
 export interface ItemResult {

@@ -242,7 +242,6 @@ function mapInspection(r: RowInspection): Inspection {
         taken_at: e.taken_at,
         lat: e.lat,
         lng: e.lng,
-        canh_bao: null,
       })),
     };
   }
@@ -314,9 +313,51 @@ async function kyUrlXemTruoc() {
 export const banNhap = () =>
   db.inspections.find((i) => i.status === 'draft' && i.inspector_id === db.session?.id);
 
+export interface LichSuRow {
+  id: string;
+  so_bien_ban: string | null;
+  status: Inspection['status'];
+  created_at: string;
+  ngay_phat_hanh: string | null;
+  ket_luan: InspectionVerdict | null;
+}
+
+/**
+ * Lịch sử biên bản đã nộp/phát hành của kỹ sư đang đăng nhập. Đọc riêng, không
+ * qua CHON/mapInspection: trang danh sách chỉ cần dòng tóm tắt, kéo cả
+ * cabinets/kết quả/bằng chứng cho từng dòng là phí băng thông vô ích.
+ */
+export async function lichSuBienBan(): Promise<LichSuRow[] | null> {
+  const inspectorId = db.session?.id;
+  if (!inspectorId) return null;
+  const { data, error } = await supabase
+    .from('inspections')
+    .select('id, so_bien_ban, status, created_at, ngay_phat_hanh, ket_luan')
+    .eq('inspector_id', inspectorId)
+    .in('status', ['submitted', 'issued'])
+    .order('created_at', { ascending: false });
+  if (error) return null;
+  return data as LichSuRow[];
+}
+
 // -------------------------------------------------------------- biên bản
 
 export const inspectionById = (id: string) => db.inspections.find((i) => i.id === id);
+
+/**
+ * Nạp một biên bản theo id nếu chưa có trong bộ nhớ - bộ nhớ mặc định chỉ giữ
+ * bản nháp hiện tại, nên mở lại biên bản đã nộp/phát hành từ màn lịch sử phải
+ * gọi hàm này trước. RLS cho đọc mọi biên bản với tài khoản đã đăng nhập.
+ */
+export async function taiBienBanTheoId(id: string): Promise<boolean> {
+  if (inspectionById(id)) return true;
+  const { data } = await supabase.from('inspections').select(CHON).eq('id', id).maybeSingle();
+  if (!data) return false;
+  db = { ...db, inspections: [...db.inspections, mapInspection(data as unknown as RowInspection)] };
+  emit();
+  await kyUrlXemTruoc();
+  return true;
+}
 
 function emptyDoiChieu(): DoiChieu {
   const out = {} as DoiChieu;

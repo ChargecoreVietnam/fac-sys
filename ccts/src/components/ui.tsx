@@ -322,17 +322,19 @@ export function LinkButton({
   href,
   children,
   variant = 'primary',
+  className = '',
 }: {
   href: string;
   children: ReactNode;
   variant?: 'primary' | 'ghost';
+  className?: string;
 }) {
   const v =
     variant === 'primary'
       ? 'bg-brand text-on-brand active:bg-brand-2'
       : 'border border-line bg-card text-ink-2 active:bg-card-2';
   return (
-    <Link href={href} className={btnBase + ' ' + v}>
+    <Link href={href} className={btnBase + ' ' + v + ' ' + className}>
       {children}
     </Link>
   );
