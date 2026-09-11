@@ -73,7 +73,11 @@ export function AppBar({
 
 export function Page({ children }: { children: ReactNode }) {
   // pb chừa chiều cao thanh dưới (~73px) cộng vùng home indicator của iPhone.
-  return <main className="mx-auto w-full max-w-2xl flex-1 px-3 pb-28 pt-3">{children}</main>;
+  return (
+    <main className="animate-fade-up mx-auto w-full max-w-2xl flex-1 px-3 pb-28 pt-3">
+      {children}
+    </main>
+  );
 }
 
 export function BottomBar({ children }: { children: ReactNode }) {
@@ -124,7 +128,7 @@ export function Chip({
   return (
     <span
       className={
-        'inline-flex items-center rounded px-1.5 py-0.5 text-[0.7rem] font-semibold leading-5 ' +
+        'inline-flex items-center rounded-full px-2.5 py-0.5 text-[0.7rem] font-semibold leading-5 ' +
         (mono ? 'font-mono tracking-tight ' : 'uppercase tracking-wide ') +
         TONE_CHIP[tone]
       }
@@ -296,7 +300,7 @@ export function Seg<T extends string>({
 /* ------------------------------------------------------------------ nút */
 
 const btnBase =
-  'inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-[0.95rem] font-semibold transition-colors disabled:opacity-45';
+  'inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-[0.95rem] font-semibold transition-[color,background-color,transform] active:scale-[0.98] disabled:opacity-45 disabled:active:scale-100';
 
 export function Button({
   variant = 'primary',

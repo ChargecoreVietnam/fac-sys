@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ItemCard } from '@/components/ItemCard';
 import {
   Card,
@@ -71,10 +71,7 @@ export function Step1({ insp, locked }: StepProps) {
           const row = insp.doi_chieu[f.key];
           return (
             <Card key={f.key} stripe={row.khop ? 'ok' : 'muted'} className="py-3 pl-4 pr-3.5">
-              <div className="flex items-baseline justify-between gap-2">
-                <h3 className="text-sm font-semibold">{f.label}</h3>
-                {f.note ? <span className="text-xs text-ink-3">{f.note}</span> : null}
-              </div>
+              <h3 className="text-sm font-semibold">{f.label}</h3>
               <div className="mt-2 flex flex-col gap-2">
                 <TextInput
                   value={row.bm02}
@@ -201,7 +198,7 @@ export function Step2({ insp, locked }: StepProps) {
                   />
                 </Field>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-col items-start gap-2">
                   <Toggle
                     checked={c.co_dien}
                     disabled={locked}
@@ -333,9 +330,31 @@ export function Step3({ insp, locked }: StepProps) {
 
 /* ------------------------------------------------------- 4 · hạng mục */
 
+/**
+ * Cuộn để đầu nhóm vừa mở nằm ngay dưới AppBar + thanh bước, không bị hai
+ * thanh sticky che mất. Đo trực tiếp trên DOM vì Step4 không có ref tới
+ * chúng - đổi chiều cao AppBar/thanh bước thì chỗ này tự theo, không cần sửa.
+ */
+function scrollLenTren(el: HTMLElement) {
+  const appBar = document.querySelector<HTMLElement>('header.sticky');
+  const thanhBuoc = document.querySelector<HTMLElement>('nav[aria-label="Các bước"]');
+  const choTrong = (appBar?.offsetHeight ?? 0) + (thanhBuoc?.offsetHeight ?? 0) + 8;
+  const top = el.getBoundingClientRect().top + window.scrollY - choTrong;
+  window.scrollTo({ top, behavior: 'smooth' });
+}
+
 export function Step4({ insp, locked }: StepProps) {
   const [moNhom, setMoNhom] = useState<string | null>('A');
   const [moCacTu, setMoCacTu] = useState<string[]>([]);
+  const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
+  // Bỏ qua lần chạy đầu: 'A' mở sẵn khi vào trang, không phải do bấm mở.
+  const daBamMo = useRef(false);
+
+  useEffect(() => {
+    if (!moNhom || !daBamMo.current) return;
+    const el = sectionRefs.current[moNhom];
+    if (el) scrollLenTren(el);
+  }, [moNhom]);
 
   return (
     <>
@@ -356,10 +375,19 @@ export function Step4({ insp, locked }: StepProps) {
           const mo = moNhom === g.key;
 
           return (
-            <section key={g.key} className="overflow-hidden rounded-xl border border-line bg-card">
+            <section
+              key={g.key}
+              ref={(el) => {
+                sectionRefs.current[g.key] = el;
+              }}
+              className="overflow-hidden rounded-xl border border-line bg-card"
+            >
               <button
                 type="button"
-                onClick={() => setMoNhom(mo ? null : g.key)}
+                onClick={() => {
+                  daBamMo.current = true;
+                  setMoNhom(mo ? null : g.key);
+                }}
                 aria-expanded={mo}
                 className="flex w-full items-center gap-3 px-3 py-3 text-left active:bg-card-2"
               >

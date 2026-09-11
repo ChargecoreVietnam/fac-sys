@@ -638,8 +638,13 @@ export async function removeEvidence(
  * việc kết luận và chuyển sang 'issued' là của admin.
  */
 export async function submitInspection(id: string) {
+  const { error } = await supabase
+    .from('inspections')
+    .update({ status: 'submitted' })
+    .eq('id', id);
+  if (error) return 'Không nộp được biên bản: ' + error.message;
   mutate(id, (i) => ({ ...i, status: 'submitted' }));
-  await supabase.from('inspections').update({ status: 'submitted' }).eq('id', id);
+  return null;
 }
 
 /** Bấm Báo cáo thay vì Nộp: một biên bản một báo cáo, bấm lại là ghi đè. */

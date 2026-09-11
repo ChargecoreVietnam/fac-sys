@@ -33,6 +33,11 @@ export function ItemCard({
   const r = getResult(insp, item.code, viTri);
   const [open, setOpen] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  /** Số tệp đang đọc + tải lên, 0 là rảnh. Nút phải khoá suốt lúc này. */
+  const [dangTai, setDangTai] = useState(0);
+  // ponytail: khoá mọi nút xoá khi đang xoá một ảnh. Xoá nhiều ảnh cùng lúc thì
+  // đổi sang Set id.
+  const [dangXoaAnh, setDangXoaAnh] = useState<string | null>(null);
 
   // Hai input riêng: điện thoại chỉ hỏi "chụp hay chọn" khi nó muốn, tách nút ra
   // thì kỹ sư luôn bấm đúng thứ mình cần.
@@ -52,13 +57,18 @@ export function ItemCard({
   async function nhanTep(files: FileList | null, maxSeconds: number) {
     if (!files || files.length === 0) return;
     setUploadError(null);
-    const ok: { meta: EvidenceMeta; url: string; file: File; sha256: string }[] = [];
-    for (const f of Array.from(files)) {
-      const res = await readEvidence(f, maxSeconds);
-      if ('error' in res) setUploadError(res.error);
-      else ok.push(res);
+    setDangTai(files.length);
+    try {
+      const ok: { meta: EvidenceMeta; url: string; file: File; sha256: string }[] = [];
+      for (const f of Array.from(files)) {
+        const res = await readEvidence(f, maxSeconds);
+        if ('error' in res) setUploadError(res.error);
+        else ok.push(res);
+      }
+      if (ok.length) await addEvidence(insp.id, item.code, viTri, ok);
+    } finally {
+      setDangTai(0);
     }
-    if (ok.length) addEvidence(insp.id, item.code, viTri, ok);
   }
 
   function suaDo(idx: number, patch: Partial<GiaTriDo>) {
@@ -251,14 +261,25 @@ export function ItemCard({
           onChange={(e) => setNote(insp.id, item.code, viTri, e.target.value)}
         />
 
-        {r.evidence.length ? (
+        {r.evidence.length || dangTai ? (
           <ul className="mt-2.5 grid grid-cols-3 gap-2">
+            {Array.from({ length: dangTai }, (_, i) => (
+              <li
+                key={'dangtai-' + i}
+                className="flex aspect-square animate-pulse items-center justify-center rounded-lg border border-dashed border-line-2 bg-card-2 text-[0.62rem] text-ink-3"
+              >
+                Đang tải…
+              </li>
+            ))}
             {r.evidence.map((e) => {
               const url = previewOf(e.id);
               return (
                 <li
                   key={e.id}
-                  className="relative overflow-hidden rounded-lg border border-line bg-card-2"
+                  className={
+                    'relative overflow-hidden rounded-lg border border-line bg-card-2 ' +
+                    (dangXoaAnh === e.id ? 'animate-pulse opacity-45' : '')
+                  }
                 >
                   <div className="flex aspect-square items-center justify-center">
                     {url && e.loai === 'anh' ? (
@@ -296,8 +317,16 @@ export function ItemCard({
                     <button
                       type="button"
                       aria-label={'Xoá ' + e.ten_tep}
-                      onClick={() => removeEvidence(insp.id, item.code, viTri, e.id)}
-                      className="absolute right-1 top-1 size-6 rounded-full bg-ink/70 text-sm font-bold leading-none text-paper"
+                      disabled={dangXoaAnh !== null}
+                      onClick={async () => {
+                        setDangXoaAnh(e.id);
+                        try {
+                          await removeEvidence(insp.id, item.code, viTri, e.id);
+                        } finally {
+                          setDangXoaAnh(null);
+                        }
+                      }}
+                      className="absolute right-1 top-1 size-6 rounded-full bg-ink/70 text-sm font-bold leading-none text-paper disabled:opacity-45"
                     >
                       ×
                     </button>
@@ -351,7 +380,7 @@ export function ItemCard({
                 e.target.value = '';
               }}
             />
-            <EvidenceButton onClick={() => cameraRef.current?.click()}>
+            <EvidenceButton disabled={!!dangTai} onClick={() => cameraRef.current?.click()}>
               Chụp ảnh
               {item.minPhotos ? (
                 <span className="tnum ml-1 text-ink-3">
@@ -359,9 +388,11 @@ export function ItemCard({
                 </span>
               ) : null}
             </EvidenceButton>
-            <EvidenceButton onClick={() => photoRef.current?.click()}>Thư viện</EvidenceButton>
+            <EvidenceButton disabled={!!dangTai} onClick={() => photoRef.current?.click()}>
+              Thư viện
+            </EvidenceButton>
             {item.suggestVideo ? (
-              <EvidenceButton onClick={() => videoRef.current?.click()}>
+              <EvidenceButton disabled={!!dangTai} onClick={() => videoRef.current?.click()}>
                 Quay video ≤{item.maxVideoSeconds}s
               </EvidenceButton>
             ) : null}
@@ -374,16 +405,19 @@ export function ItemCard({
 
 function EvidenceButton({
   onClick,
+  disabled,
   children,
 }: {
   onClick: () => void;
+  disabled?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="min-h-11 flex-1 rounded-lg border border-dashed border-line-2 px-3 text-sm font-semibold text-ink-2 active:bg-card-2"
+      disabled={disabled}
+      className="min-h-11 flex-1 rounded-lg border border-dashed border-line-2 px-3 text-sm font-semibold text-ink-2 active:bg-card-2 disabled:opacity-45"
     >
       {children}
     </button>
