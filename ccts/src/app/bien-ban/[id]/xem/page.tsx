@@ -214,7 +214,7 @@ export default function InspectionSheetPage({ params }: { params: Promise<{ id: 
               {insp.status === 'issued'
                 ? 'Phát hành ' + dt(insp.ngay_phat_hanh)
                 : 'Bản nháp, chưa phát hành'}{' '}
-              · {insp.doi_chieu.ma_ten_tram.bm02 || 'chưa ghi mã Trạm'}
+              · {insp.doi_chieu.ma_tram.bm02 || 'chưa ghi mã Trạm'}
             </p>
             <p className="mt-1">
               Biên bản lập trên Nền tảng CCTS. Bản trên Nền tảng là bản gốc theo Điều 1.4.

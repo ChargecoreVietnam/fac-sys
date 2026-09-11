@@ -71,7 +71,10 @@ export function Step1({ insp, locked }: StepProps) {
           const row = insp.doi_chieu[f.key];
           return (
             <Card key={f.key} stripe={row.khop ? 'ok' : 'muted'} className="py-3 pl-4 pr-3.5">
-              <h3 className="text-sm font-semibold">{f.label}</h3>
+              <h3 className="text-sm font-semibold">
+                {f.label}
+                {f.required ? <span className="text-bad"> *</span> : null}
+              </h3>
               <div className="mt-2 flex flex-col gap-2">
                 <TextInput
                   value={row.bm02}

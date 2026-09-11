@@ -121,7 +121,7 @@ export const CHECKLIST: ChecklistItem[] = [
     title: 'Sơn nền, sơn tường, kẻ vạch (nếu có)',
     criteria: 'Đúng màu, sắc nét, không bong tróc, đúng thiết kế',
     evidence: '01 ảnh toàn cảnh + 01 ảnh cận cảnh bề mặt sơn',
-    required: false,
+    required: true,
     allowNA: true,
     perCabinet: false,
     minPhotos: 2,
@@ -257,7 +257,7 @@ export const CHECKLIST: ChecklistItem[] = [
       'Lắp đúng thiết kế, cố định chắc, có nối đất máng; dây gọn gàng, tách nguồn/tín hiệu',
     evidence:
       '01 ảnh toàn tuyến + ảnh cận cảnh mối nối, điểm cố định, nối đất máng',
-    required: false,
+    required: true,
     allowNA: true,
     perCabinet: false,
     minPhotos: 2,
@@ -348,7 +348,7 @@ export const CHECKLIST: ChecklistItem[] = [
       'Đúng chủng loại, vị trí, hướng quan sát thấy toàn bộ Tủ; cố định chắc chắn',
     evidence:
       '01 ảnh toàn cảnh vị trí/hướng camera + 01 ảnh tem model/SN cho từng camera',
-    required: false,
+    required: true,
     allowNA: true,
     perCabinet: false,
     minPhotos: 2,
@@ -363,7 +363,7 @@ export const CHECKLIST: ChecklistItem[] = [
       'NVR nhận đủ kênh, đủ dung lượng; hình ảnh về trung tâm rõ nét, ổn định',
     evidence:
       'Ảnh mặt trước NVR + ảnh chụp màn hình hình ảnh camera tại trung tâm có Mã Trạm và thời gian',
-    required: false,
+    required: true,
     allowNA: true,
     perCabinet: false,
     minPhotos: 2,
@@ -409,7 +409,7 @@ export const CHECKLIST: ChecklistItem[] = [
     criteria:
       'Đúng vị trí, không nghiêng/cong vênh, đúng màu sắc, nội dung theo thiết kế',
     evidence: '01 ảnh toàn cảnh thể hiện vị trí + 01 ảnh chính diện từng biển',
-    required: false,
+    required: true,
     allowNA: true,
     perCabinet: false,
     minPhotos: 2,
@@ -438,7 +438,7 @@ export const CHECKLIST: ChecklistItem[] = [
     criteria: 'Hoàn trả như hiện trạng ban đầu; có xác nhận của chủ mặt bằng',
     evidence:
       'Ảnh trước-sau cùng góc chụp + ảnh biên bản xác nhận của chủ mặt bằng',
-    required: false,
+    required: true,
     allowNA: true,
     perCabinet: false,
     minPhotos: 3,
@@ -526,11 +526,12 @@ export const itemsInGroup = (g: GroupKey) =>
 
 /** BM03 mục 1 - bảng đối chiếu thông tin Trạm. */
 export const RECONCILE_FIELDS = [
-  { key: 'ma_ten_tram', label: 'Mã Trạm / Tên Trạm' },
-  { key: 'dia_chi', label: 'Địa chỉ' },
-  { key: 'toa_do', label: 'Tọa độ' },
-  { key: 'thiet_ke_dien_hinh', label: 'Thiết kế điển hình' },
-  { key: 'nha_thau', label: 'Nhà thầu' },
+  { key: 'ma_tram', label: 'Mã Trạm', required: true },
+  { key: 'ten_tram', label: 'Tên Trạm', required: false },
+  { key: 'dia_chi', label: 'Địa chỉ', required: true },
+  { key: 'toa_do', label: 'Tọa độ', required: true },
+  { key: 'thiet_ke_dien_hinh', label: 'Thiết kế điển hình', required: false },
+  { key: 'nha_thau', label: 'Nhà thầu', required: true },
 ] as const;
 
 export type ReconcileFieldKey = (typeof RECONCILE_FIELDS)[number]['key'];
