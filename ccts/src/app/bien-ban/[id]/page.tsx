@@ -45,6 +45,8 @@ export default function InspectionFormPage({ params }: { params: Promise<{ id: s
   const [dangXoa, setDangXoa] = useState(false);
   const [loiXoa, setLoiXoa] = useState<string | null>(null);
   const [luuThanhCong, setLuuThanhCong] = useState<'form' | 'report' | null>(null);
+  const [dangLuu, setDangLuu] = useState(false);
+  const [loiLuu, setLoiLuu] = useState<string | null>(null);
 
   useEffect(() => {
     if (db && !db.session) router.replace('/login');
@@ -79,7 +81,9 @@ export default function InspectionFormPage({ params }: { params: Promise<{ id: s
   }
 
   async function luuBaoCao() {
+    setDangLuu(true);
     const loi = await saveReport(insp!.id, bcNoiDung, bcLyDo.trim());
+    setDangLuu(false);
     if (loi) {
       setBcLoi(loi);
       return;
@@ -100,8 +104,15 @@ export default function InspectionFormPage({ params }: { params: Promise<{ id: s
     router.replace('/');
   }
 
-  function phatHanh() {
-    void submitInspection(insp!.id);
+  async function phatHanh() {
+    setDangLuu(true);
+    setLoiLuu(null);
+    const loi = await submitInspection(insp!.id);
+    setDangLuu(false);
+    if (loi) {
+      setLoiLuu(loi);
+      return;
+    }
     setXacNhan(false);
     setLuuThanhCong('form');
   }
@@ -114,8 +125,10 @@ export default function InspectionFormPage({ params }: { params: Promise<{ id: s
         right={
           <button
             type="button"
-            onClick={() => {
-              signOut();
+            onClick={async () => {
+              // Chờ session xoá xong rồi mới điều hướng: đá đi sớm thì màn
+              // login còn thấy session cũ, tự bật lại về đây một nhịp.
+              await signOut();
               router.replace('/login');
             }}
             className="rounded-lg px-2.5 py-2 text-xs font-semibold text-ink-2 active:bg-card-2"
@@ -211,7 +224,7 @@ export default function InspectionFormPage({ params }: { params: Promise<{ id: s
 
       {chanPopup ? (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/50 p-3 sm:items-center">
-          <div className="safe-b w-full max-w-md rounded-2xl bg-card p-4 shadow-xl">
+          <div className="shadow-soft safe-b w-full max-w-md rounded-2xl border border-line bg-card p-4">
             <h2 className="text-lg font-bold tracking-tight text-bad">Chưa phát hành được</h2>
             <p className="mt-1 text-sm text-ink-2">Bấm từng dòng để nhảy tới bước cần sửa.</p>
             <ul className="mt-3 space-y-1.5">
@@ -239,7 +252,7 @@ export default function InspectionFormPage({ params }: { params: Promise<{ id: s
 
       {baoCao ? (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/50 p-3 sm:items-center">
-          <div className="safe-b w-full max-w-md rounded-2xl bg-card p-4 shadow-xl">
+          <div className="shadow-soft safe-b w-full max-w-md rounded-2xl border border-line bg-card p-4">
             <h2 className="text-lg font-bold tracking-tight">Báo cáo nghiệm thu</h2>
             <p className="mt-1 text-sm text-ink-2">Chọn nội dung báo cáo và ghi rõ lý do.</p>
 
@@ -278,15 +291,15 @@ export default function InspectionFormPage({ params }: { params: Promise<{ id: s
             ) : null}
 
             <div className="mt-5 flex gap-2">
-              <Button variant="ghost" onClick={() => setBaoCao(false)}>
+              <Button variant="ghost" disabled={dangLuu} onClick={() => setBaoCao(false)}>
                 Huỷ
               </Button>
               <Button
                 className="!bg-bad !text-white"
-                disabled={!baoCaoHopLe}
+                disabled={!baoCaoHopLe || dangLuu}
                 onClick={luuBaoCao}
               >
-                Lưu báo cáo
+                {dangLuu ? 'Đang lưu…' : 'Lưu báo cáo'}
               </Button>
             </div>
           </div>
@@ -295,7 +308,7 @@ export default function InspectionFormPage({ params }: { params: Promise<{ id: s
 
       {xacNhanXoa ? (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/50 p-3 sm:items-center">
-          <div className="safe-b w-full max-w-md rounded-2xl bg-card p-4 shadow-xl">
+          <div className="shadow-soft safe-b w-full max-w-md rounded-2xl border border-line bg-card p-4">
             <h2 className="text-lg font-bold tracking-tight text-bad">Xoá biên bản này?</h2>
             <p className="mt-2 text-sm leading-relaxed text-ink-2">
               Toàn bộ nội dung đã điền và ảnh đã tải lên sẽ bị xoá khỏi máy chủ. Không khôi phục
@@ -342,11 +355,18 @@ export default function InspectionFormPage({ params }: { params: Promise<{ id: s
                 </Banner>
               </div>
             ) : null}
+            {loiLuu ? (
+              <div className="mt-3">
+                <Banner tone="bad" title={loiLuu} />
+              </div>
+            ) : null}
             <div className="mt-4 flex gap-2">
-              <Button variant="ghost" onClick={() => setXacNhan(false)}>
+              <Button variant="ghost" disabled={dangLuu} onClick={() => setXacNhan(false)}>
                 Huỷ
               </Button>
-              <Button onClick={phatHanh}>Lưu</Button>
+              <Button disabled={dangLuu} onClick={phatHanh}>
+                {dangLuu ? 'Đang lưu…' : 'Lưu'}
+              </Button>
             </div>
           </div>
         </div>
@@ -359,7 +379,7 @@ export default function InspectionFormPage({ params }: { params: Promise<{ id: s
           aria-labelledby="success-title"
           className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4"
         >
-          <div className="w-full max-w-sm rounded-2xl bg-card p-5 text-center shadow-xl">
+          <div className="shadow-soft w-full max-w-sm rounded-2xl border border-line bg-card p-5 text-center">
             <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-ok-soft text-ok">
               <svg viewBox="0 0 24 24" className="size-8" fill="none" aria-hidden="true">
                 <path

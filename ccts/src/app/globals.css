@@ -98,9 +98,37 @@ button {
   padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
 }
 
+/* Nhích nhẹ lên khi vào màn - reduced-motion đã tắt animation-duration ở trên. */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-fade-up {
+  animation: fade-up 500ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Bóng cực mờ cho hộp thoại nổi trên nền tối - tránh shadow-xl mặc định của
+   Tailwind, quá đậm so với phần còn lại của giao diện (toàn viền 1px, không
+   bóng). Viền vẫn giữ để hộp có ranh giới rõ trên nền card sáng màu. */
+.shadow-soft {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.06);
+}
+
 @media print {
   .no-print {
     display: none !important;
+  }
+  /* In ngay lúc mount là bắt trúng khung hình mờ/lệch của hiệu ứng vào trang. */
+  .animate-fade-up {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
   }
   body {
     background: #fff;

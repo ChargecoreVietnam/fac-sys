@@ -6,8 +6,6 @@
  * Sửa quy cách bằng chứng ở đây, không rải rác trong giao diện.
  */
 
-export const GPS_TOLERANCE_M = 50;
-
 /** Video tối đa 60 giây (Phụ lục 01 mục A); một số hạng mục siết còn 30 giây. */
 export const MAX_VIDEO_SECONDS = 60;
 
@@ -528,11 +526,11 @@ export const itemsInGroup = (g: GroupKey) =>
 
 /** BM03 mục 1 - bảng đối chiếu thông tin Trạm. */
 export const RECONCILE_FIELDS = [
-  { key: 'ma_ten_tram', label: 'Mã Trạm / Tên Trạm', note: '' },
-  { key: 'dia_chi', label: 'Địa chỉ', note: '' },
-  { key: 'toa_do', label: 'Tọa độ', note: `Sai lệch <= ${GPS_TOLERANCE_M} m` },
-  { key: 'thiet_ke_dien_hinh', label: 'Thiết kế điển hình', note: '' },
-  { key: 'nha_thau', label: 'Nhà thầu', note: '' },
+  { key: 'ma_ten_tram', label: 'Mã Trạm / Tên Trạm' },
+  { key: 'dia_chi', label: 'Địa chỉ' },
+  { key: 'toa_do', label: 'Tọa độ' },
+  { key: 'thiet_ke_dien_hinh', label: 'Thiết kế điển hình' },
+  { key: 'nha_thau', label: 'Nhà thầu' },
 ] as const;
 
 export type ReconcileFieldKey = (typeof RECONCILE_FIELDS)[number]['key'];
