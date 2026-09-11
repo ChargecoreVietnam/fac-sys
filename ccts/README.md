@@ -106,7 +106,7 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 ```
 
 Tài khoản do quản trị tạo trong Supabase Studio, không có tự đăng ký. Kỹ sư chỉ
-gõ tên đăng nhập, app tự ghép đuôi `@chargecore.com.vn` (gõ cả email cũng được).
+gõ tên đăng nhập, app tự ghép đuôi `@chargecoreglobal.com` (gõ cả email cũng được).
 
 Upload đi **thẳng** từ trình duyệt lên Supabase Storage. Không đẩy qua route
 handler của Next.js — Vercel giới hạn thân yêu cầu 4.5 MB, video sẽ hỏng.

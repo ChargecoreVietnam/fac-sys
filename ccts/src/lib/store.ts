@@ -27,7 +27,7 @@ import type {
 import { resultKey } from './types';
 
 /** Đuôi email do app tự ghép, kỹ sư chỉ gõ tên đăng nhập. */
-export const EMAIL_DOMAIN = '@chargecore.com.vn';
+export const EMAIL_DOMAIN = '@chargecoreglobal.com';
 
 const BUCKET = 'evidence';
 
