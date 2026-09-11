@@ -266,10 +266,9 @@ export function ItemCard({
             {Array.from({ length: dangTai }, (_, i) => (
               <li
                 key={'dangtai-' + i}
-                className="flex aspect-square animate-pulse items-center justify-center rounded-lg border border-dashed border-line-2 bg-card-2 text-[0.62rem] text-ink-3"
-              >
-                Đang tải…
-              </li>
+                aria-label="Đang tải ảnh"
+                className="skeleton aspect-square rounded-lg border border-line"
+              />
             ))}
             {r.evidence.map((e) => {
               const url = previewOf(e.id);
@@ -305,14 +304,6 @@ export function ItemCard({
                       {formatBytes(e.size_bytes)}
                     </p>
                   </div>
-                  {e.canh_bao ? (
-                    <span
-                      title={e.canh_bao}
-                      className="absolute left-1 top-1 rounded bg-warn px-1 text-[0.6rem] font-bold text-white"
-                    >
-                      !
-                    </span>
-                  ) : null}
                   {!locked ? (
                     <button
                       type="button"

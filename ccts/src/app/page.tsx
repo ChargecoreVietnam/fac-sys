@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { AppBar, Button, Card, Loading, Page } from '@/components/ui';
+import { AppBar, Button, Card, LinkButton, Loading, Page } from '@/components/ui';
 import { banNhap, createInspection, deleteInspection, signOut, useDB } from '@/lib/store';
 
 export default function HomePage() {
@@ -115,6 +115,10 @@ export default function HomePage() {
 
           {loi ? <p className="mt-2 text-xs font-medium text-bad">{loi}</p> : null}
         </Card>
+
+        <LinkButton href="/bien-ban" variant="ghost" className="mt-3 w-full">
+          Xem lịch sử biên bản
+        </LinkButton>
       </Page>
     </>
   );

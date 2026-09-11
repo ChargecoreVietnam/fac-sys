@@ -120,6 +120,21 @@ button {
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.06);
 }
 
+/* Ô ảnh đang tải lên: dải sáng quét qua thay vì chữ "Đang tải…" tĩnh. */
+@keyframes skeleton-sweep {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+.skeleton {
+  background-image: linear-gradient(100deg, var(--card-2) 40%, var(--line) 50%, var(--card-2) 60%);
+  background-size: 200% 100%;
+  animation: skeleton-sweep 1.6s ease-in-out infinite;
+}
+
 @media print {
   .no-print {
     display: none !important;

@@ -12,6 +12,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [dangGui, setDangGui] = useState(false);
+  const [hienMatKhau, setHienMatKhau] = useState(false);
 
   // Điều hướng phải nằm trong effect, gọi thẳng trong render là setState-in-render.
   useEffect(() => {
@@ -62,21 +63,53 @@ export default function LoginPage() {
                   autoCapitalize="none"
                   autoCorrect="off"
                   autoComplete="username"
-                  placeholder="se01"
+                  placeholder="vd. nv01"
                   className="font-mono"
                 />
               </Field>
               <Field label="Mật khẩu">
-                <TextInput
-                  type="password"
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    setError(null);
-                  }}
-                  autoComplete="current-password"
-                  placeholder="••••••"
-                />
+                <div className="relative">
+                  <TextInput
+                    type={hienMatKhau ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setError(null);
+                    }}
+                    autoComplete="current-password"
+                    placeholder="••••••"
+                    className="pr-11"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setHienMatKhau((v) => !v)}
+                    aria-label={hienMatKhau ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                    className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-ink-3"
+                  >
+                    {hienMatKhau ? (
+                      <svg viewBox="0 0 24 24" className="size-5" fill="none" aria-hidden="true">
+                        <path
+                          d="M3 3l18 18M10.6 10.6a3 3 0 0 0 4.24 4.24M6.5 6.7C4 8.3 2 12 2 12s3.5 7 10 7c1.8 0 3.3-.4 4.6-1.1M17.4 15.4C19.4 13.9 22 12 22 12s-1.2-2.4-3.3-4.3"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" className="size-5" fill="none" aria-hidden="true">
+                        <path
+                          d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
               </Field>
 
               {error ? <Banner tone="bad" title={error} /> : null}
