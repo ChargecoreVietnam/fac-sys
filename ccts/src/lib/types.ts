@@ -36,14 +36,29 @@ export interface StationCabinet {
   sn: string;
 }
 
+/**
+ * Kỹ sư cầm biên bản chỉ định FAC của Trạm, tick xác nhận từng dòng khớp với
+ * thực tế. Giá trị nằm ở stations, chỉ phần xác nhận này ở jsonb doi_chieu.
+ */
 export interface DoiChieuRow {
-  bm01: string;
-  bm02: string;
   khop: boolean;
   ghi_chu: string;
 }
 
 export type DoiChieu = Record<ReconcileFieldKey, DoiChieuRow>;
+
+/** Thông tin Trạm kỹ sư ghi tại hiện trường - lưu thẳng vào bảng stations. */
+export interface StationForm {
+  id: string;
+  ma_tram: string;
+  ten_tram: string;
+  dia_chi: string;
+  tinh_tp: string;
+  lat: number | null;
+  lng: number | null;
+  thiet_ke_dien_hinh: string;
+  nha_thau: string;
+}
 
 /** BM02 Phần 2 - tình trạng Tủ tại thời điểm nộp, không phải thuộc tính của Tủ. */
 export interface InspectionCabinet {
@@ -103,16 +118,18 @@ export interface InspectionReport {
 
 export interface Inspection {
   id: string;
-  /** Ba trường dưới do admin gán khi duyệt; biểu mẫu không đọc Trạm nên để trống. */
+  /** Hàng stations riêng của biên bản này, tạo cùng lúc mở biểu mẫu. */
   station_id: string | null;
   inspector_id: string;
   luot_thu: number | null;
   so_bien_ban: string | null;
   status: 'draft' | 'submitted' | 'issued';
 
+  /** Thông tin Trạm, đọc từ bảng stations qua station_id. */
+  station: StationForm | null;
+  /** Xác nhận từng dòng khớp với biên bản chỉ định FAC. */
   doi_chieu: DoiChieu;
 
-  nha_thau: string;
   nguoi_lap_ho_so: string;
   nha_thau_phone: string;
 

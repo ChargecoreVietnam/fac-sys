@@ -535,3 +535,45 @@ export const RECONCILE_FIELDS = [
 ] as const;
 
 export type ReconcileFieldKey = (typeof RECONCILE_FIELDS)[number]['key'];
+
+/**
+ * 34 tỉnh/thành sau sáp nhập 01/07/2025: 6 thành phố trực thuộc trung ương rồi
+ * 28 tỉnh. Lưu nguyên chuỗi vào stations.tinh_tp - cột text, không phải enum,
+ * để đổi được khi đơn vị hành chính thay đổi tiếp.
+ */
+export const TINH_TP = [
+  'Thành phố Hà Nội',
+  'Thành phố Hải Phòng',
+  'Thành phố Huế',
+  'Thành phố Đà Nẵng',
+  'Thành phố Hồ Chí Minh',
+  'Thành phố Cần Thơ',
+  'An Giang',
+  'Bắc Ninh',
+  'Cà Mau',
+  'Cao Bằng',
+  'Đắk Lắk',
+  'Điện Biên',
+  'Đồng Nai',
+  'Đồng Tháp',
+  'Gia Lai',
+  'Hà Tĩnh',
+  'Hưng Yên',
+  'Khánh Hòa',
+  'Lai Châu',
+  'Lâm Đồng',
+  'Lạng Sơn',
+  'Lào Cai',
+  'Nghệ An',
+  'Ninh Bình',
+  'Phú Thọ',
+  'Quảng Ngãi',
+  'Quảng Ninh',
+  'Quảng Trị',
+  'Sơn La',
+  'Tây Ninh',
+  'Thái Nguyên',
+  'Thanh Hóa',
+  'Tuyên Quang',
+  'Vĩnh Long',
+] as const;

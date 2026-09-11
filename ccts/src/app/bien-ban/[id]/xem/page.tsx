@@ -11,7 +11,13 @@ import {
   RECONCILE_FIELDS,
   itemsInGroup,
 } from '@/lib/checklist';
-import { getResult, inspectionById, taiBienBanTheoId, useDB } from '@/lib/store';
+import {
+  getResult,
+  inspectionById,
+  stationValue,
+  taiBienBanTheoId,
+  useDB,
+} from '@/lib/store';
 import type { Inspection } from '@/lib/types';
 
 const dt = (s: string | null) =>
@@ -84,13 +90,12 @@ export default function InspectionSheetPage({ params }: { params: Promise<{ id: 
             </div>
           </header>
 
-          <Muc so={1} ten="Đối chiếu thông tin Trạm" />
+          <Muc so={1} ten="Thông tin Trạm" />
           <div className="overflow-x-auto">
             <table className="w-full min-w-[34rem] border-collapse text-[0.8rem]">
               <thead>
                 <tr className="border-b border-line text-left text-[0.65rem] uppercase tracking-wide text-ink-2">
                   <th className="w-40 py-1.5 pr-2 font-bold">Nội dung</th>
-                  <th className="py-1.5 pr-2 font-bold">Theo BM01</th>
                   <th className="py-1.5 pr-2 font-bold">Ghi nhận</th>
                   <th className="w-16 py-1.5 font-bold">Khớp</th>
                 </tr>
@@ -101,9 +106,12 @@ export default function InspectionSheetPage({ params }: { params: Promise<{ id: 
                   return (
                     <tr key={f.key} className="border-b border-line align-top">
                       <td className="py-2 pr-2 font-semibold">{f.label}</td>
-                      <td className="py-2 pr-2 text-ink-2">{r.bm01 || '—'}</td>
                       <td className="py-2 pr-2">
-                        {r.bm02 || '—'}
+                        {stationValue(insp.station, f.key) || '—'}
+                        {/* Tỉnh/TP là ô chọn riêng, in kèm ngay dưới địa chỉ. */}
+                        {f.key === 'dia_chi' && insp.station?.tinh_tp ? (
+                          <span className="block text-xs text-ink-2">{insp.station.tinh_tp}</span>
+                        ) : null}
                         {r.ghi_chu ? (
                           <span className="block text-xs text-ink-3">{r.ghi_chu}</span>
                         ) : null}
@@ -124,7 +132,7 @@ export default function InspectionSheetPage({ params }: { params: Promise<{ id: 
             <KV k="Chức vụ" v={insp.nguoi_nghiem_thu_chuc_vu} />
             <KV k="Từ" v={dt(insp.tu_thoi_gian)} />
             <KV k="Đến" v={dt(insp.den_thoi_gian)} />
-            <KV k="Nhà thầu" v={insp.nha_thau} />
+            <KV k="Nhà thầu" v={stationValue(insp.station, 'nha_thau')} />
             <KV k="Người lập hồ sơ" v={insp.nguoi_lap_ho_so + ' – ' + insp.nha_thau_phone} />
           </dl>
 
@@ -214,7 +222,7 @@ export default function InspectionSheetPage({ params }: { params: Promise<{ id: 
               {insp.status === 'issued'
                 ? 'Phát hành ' + dt(insp.ngay_phat_hanh)
                 : 'Bản nháp, chưa phát hành'}{' '}
-              · {insp.doi_chieu.ma_tram.bm02 || 'chưa ghi mã Trạm'}
+              · {stationValue(insp.station, 'ma_tram') || 'chưa ghi mã Trạm'}
             </p>
             <p className="mt-1">
               Biên bản lập trên Nền tảng CCTS. Bản trên Nền tảng là bản gốc theo Điều 1.4.

@@ -200,6 +200,11 @@ export function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return <input {...rest} className={inputCls + ' ' + className} />;
 }
 
+export function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
+  const { className = '', ...rest } = props;
+  return <select {...rest} className={inputCls + ' ' + className} />;
+}
+
 export function TextArea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   const { className = '', rows = 2, ...rest } = props;
   return <textarea rows={rows} {...rest} className={inputCls + ' resize-y ' + className} />;

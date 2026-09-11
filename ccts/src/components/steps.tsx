@@ -7,12 +7,14 @@ import {
   Chip,
   Field,
   SectionTitle,
+  Select,
   TextInput,
   Toggle,
 } from '@/components/ui';
 import {
   GROUPS,
   RECONCILE_FIELDS,
+  TINH_TP,
   itemsInGroup,
 } from '@/lib/checklist';
 import {
@@ -21,8 +23,12 @@ import {
   patchCabinet,
   patchDoiChieu,
   patchInspection,
+  patchStation,
   removeCabinet,
+  stationPatch,
+  stationValue,
 } from '@/lib/store';
+import type { ReconcileFieldKey } from '@/lib/checklist';
 import type { Inspection } from '@/lib/types';
 
 interface StepProps {
@@ -35,6 +41,15 @@ interface StepProps {
 export function Step1({ insp, locked }: StepProps) {
   const [gps, setGps] = useState<{ text: string; tone: 'ok' | 'bad' | 'warn' } | null>(null);
   const [dangDo, setDangDo] = useState(false);
+  // Toạ độ lưu thành hai số lat/lng, nhưng gõ dở ("10.7,") thì chưa tách được -
+  // giữ nguyên chuỗi đang gõ ở đây, chỉ ghi xuống khi tách được.
+  const [toaDo, setToaDo] = useState(() => stationValue(insp.station, 'toa_do'));
+
+  function ghi(key: ReconcileFieldKey, raw: string) {
+    if (key === 'toa_do') setToaDo(raw);
+    const patch = stationPatch(key, raw);
+    if (patch) void patchStation(insp.id, patch);
+  }
 
   function layToaDo() {
     if (!navigator.geolocation) {
@@ -46,10 +61,10 @@ export function Step1({ insp, locked }: StepProps) {
       (pos) => {
         setDangDo(false);
         const { latitude, longitude } = pos.coords;
-        const toaDo = latitude.toFixed(6) + ', ' + longitude.toFixed(6);
-        // Biểu mẫu không đọc BM01 nên chỉ ghi toạ độ đo được, không tự so lệch.
-        void patchDoiChieu(insp.id, 'toa_do', { bm02: toaDo });
-        setGps({ text: 'Đã ghi toạ độ ' + toaDo, tone: 'ok' });
+        const text = latitude.toFixed(6) + ', ' + longitude.toFixed(6);
+        setToaDo(text);
+        void patchStation(insp.id, { lat: latitude, lng: longitude });
+        setGps({ text: 'Đã ghi toạ độ ' + text, tone: 'ok' });
       },
       (err) => {
         setDangDo(false);
@@ -61,13 +76,15 @@ export function Step1({ insp, locked }: StepProps) {
 
   return (
     <>
-      <SectionTitle note="BM03 mục 1">Đối chiếu thông tin Trạm</SectionTitle>
+      <SectionTitle note="BM03 mục 1">Thông tin Trạm</SectionTitle>
       <p className="mb-3 text-sm leading-relaxed text-ink-2">
-        Ghi lại giá trị thực tế đọc được tại hiện trường và tick Khớp cho từng hàng.
+        Ghi lại giá trị thực tế đọc được tại hiện trường, tick Khớp nếu đúng với biên bản chỉ
+        định FAC.
       </p>
 
       <div className="flex flex-col gap-2">
         {RECONCILE_FIELDS.map((f) => {
+          const value = f.key === 'toa_do' ? toaDo : stationValue(insp.station, f.key);
           const row = insp.doi_chieu[f.key];
           return (
             <Card key={f.key} stripe={row.khop ? 'ok' : 'muted'} className="py-3 pl-4 pr-3.5">
@@ -77,11 +94,25 @@ export function Step1({ insp, locked }: StepProps) {
               </h3>
               <div className="mt-2 flex flex-col gap-2">
                 <TextInput
-                  value={row.bm02}
+                  value={value}
                   disabled={locked}
                   placeholder="Giá trị ghi nhận tại hiện trường"
-                  onChange={(e) => patchDoiChieu(insp.id, f.key, { bm02: e.target.value })}
+                  onChange={(e) => ghi(f.key, e.target.value)}
                 />
+                {f.key === 'dia_chi' ? (
+                  <Select
+                    value={insp.station?.tinh_tp ?? ''}
+                    disabled={locked}
+                    onChange={(e) => patchStation(insp.id, { tinh_tp: e.target.value })}
+                  >
+                    <option value="">— Chọn Tỉnh / Thành phố * —</option>
+                    {TINH_TP.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </Select>
+                ) : null}
                 {f.key === 'toa_do' && !locked ? (
                   <button
                     type="button"

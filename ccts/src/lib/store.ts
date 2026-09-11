@@ -12,10 +12,11 @@
  */
 import { useSyncExternalStore } from 'react';
 import { CHECKLIST, RECONCILE_FIELDS } from './checklist';
-import type { InspectionVerdict, ItemVerdict } from './checklist';
+import type { InspectionVerdict, ItemVerdict, ReconcileFieldKey } from './checklist';
 import { supabase } from './supabase';
 import type {
   DoiChieu,
+  DoiChieuRow,
   EvidenceMeta,
   GiaTriDo,
   Inspection,
@@ -23,6 +24,7 @@ import type {
   ItemResult,
   Profile,
   ReportKind,
+  StationForm,
 } from './types';
 import { resultKey } from './types';
 
@@ -175,6 +177,19 @@ interface RowResult {
   evidence: RowEvidence[];
 }
 
+/** Cột stations đều nullable vì kỹ sư điền dần. */
+interface RowStation {
+  id: string;
+  ma_tram: string | null;
+  ten_tram: string | null;
+  dia_chi: string | null;
+  tinh_tp: string | null;
+  lat: number | null;
+  lng: number | null;
+  thiet_ke_dien_hinh: string | null;
+  nha_thau: string | null;
+}
+
 interface RowInspection {
   id: string;
   station_id: string | null;
@@ -182,8 +197,8 @@ interface RowInspection {
   luot_thu: number | null;
   so_bien_ban: string | null;
   status: Inspection['status'];
-  doi_chieu: DoiChieu;
-  nha_thau: string;
+  stations: RowStation | null;
+  doi_chieu: Partial<DoiChieu>;
   nguoi_lap_ho_so: string;
   nha_thau_phone: string;
   nguoi_nghiem_thu_ten: string;
@@ -201,7 +216,8 @@ interface RowInspection {
 }
 
 const CHON =
-  '*, inspection_reports(noi_dung, ly_do), inspection_cabinets(*), ' +
+  '*, stations(id, ma_tram, ten_tram, dia_chi, tinh_tp, lat, lng, thiet_ke_dien_hinh, nha_thau), ' +
+  'inspection_reports(noi_dung, ly_do), inspection_cabinets(*), ' +
   'item_results(id, code, cabinet_id, ket_qua, ghi_chu, gia_tri_do, evidence(*))';
 
 function mapInspection(r: RowInspection): Inspection {
@@ -253,11 +269,21 @@ function mapInspection(r: RowInspection): Inspection {
     luot_thu: r.luot_thu,
     so_bien_ban: r.so_bien_ban,
     status: r.status,
-    // Trộn với mặc định: đổi khoá RECONCILE_FIELDS (vd. tách ma_ten_tram thành
-    // ma_tram/ten_tram) không tự vá dữ liệu jsonb cũ đã lưu - thiếu khoá mới
-    // sẽ crash ở .bm02/.khop nếu không có bước này.
+    // Giao diện dùng chuỗi rỗng cho ô trống; cột text nullable đổi hết về ''.
+    station: r.stations && {
+      id: r.stations.id,
+      ma_tram: r.stations.ma_tram ?? '',
+      ten_tram: r.stations.ten_tram ?? '',
+      dia_chi: r.stations.dia_chi ?? '',
+      tinh_tp: r.stations.tinh_tp ?? '',
+      lat: r.stations.lat,
+      lng: r.stations.lng,
+      thiet_ke_dien_hinh: r.stations.thiet_ke_dien_hinh ?? '',
+      nha_thau: r.stations.nha_thau ?? '',
+    },
+    // Trộn với mặc định: hàng lưu trước khi đổi khoá RECONCILE_FIELDS sẽ thiếu
+    // khoá mới, đọc thẳng .khop sẽ crash.
     doi_chieu: { ...emptyDoiChieu(), ...r.doi_chieu },
-    nha_thau: r.nha_thau,
     nguoi_lap_ho_so: r.nguoi_lap_ho_so,
     nha_thau_phone: r.nha_thau_phone,
     nguoi_nghiem_thu_ten: r.nguoi_nghiem_thu_ten,
@@ -364,10 +390,30 @@ export async function taiBienBanTheoId(id: string): Promise<boolean> {
 
 function emptyDoiChieu(): DoiChieu {
   const out = {} as DoiChieu;
-  for (const f of RECONCILE_FIELDS) {
-    out[f.key] = { bm01: '', bm02: '', khop: false, ghi_chu: '' };
-  }
+  for (const f of RECONCILE_FIELDS) out[f.key] = { khop: false, ghi_chu: '' };
   return out;
+}
+
+/**
+ * RECONCILE_FIELDS vẫn là thứ tự hiển thị của mục 1, nhưng giá trị giờ nằm ở
+ * cột thật của stations. Hai hàm dưới là cầu nối duy nhất giữa hai cách đặt
+ * tên đó - biểu mẫu, bản xem và phần kiểm tra đều đi qua đây.
+ */
+export function stationValue(s: StationForm | null, key: ReconcileFieldKey): string {
+  if (!s) return '';
+  if (key !== 'toa_do') return s[key];
+  return s.lat == null || s.lng == null ? '' : s.lat.toFixed(6) + ', ' + s.lng.toFixed(6);
+}
+
+/** null = chuỗi toạ độ đang gõ dở, chưa ghi được. */
+export function stationPatch(key: ReconcileFieldKey, raw: string): Partial<StationForm> | null {
+  if (key !== 'toa_do') return { [key]: raw };
+  if (!raw.trim()) return { lat: null, lng: null };
+  const [a, b, ...thua] = raw.split(',');
+  if (b === undefined || thua.length) return null;
+  const lat = Number(a.trim());
+  const lng = Number(b.trim());
+  return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
 }
 
 /** Sửa bản sao trong bộ nhớ; phần ghi lên máy chủ do hàm gọi tự lo. */
@@ -382,12 +428,22 @@ export async function createInspection(): Promise<string> {
   if (!inspector) throw new Error('Chưa đăng nhập');
 
   const tu_thoi_gian = new Date();
+
+  // Hàng stations trống đi trước: mỗi biên bản giữ bản ghi Trạm của riêng nó,
+  // lượt sau không ghi đè lượt trước (Điều 1.4).
+  const { data: st, error: loiTram } = await supabase
+    .from('stations')
+    .insert({})
+    .select('id')
+    .single();
+  if (loiTram || !st) throw new Error('Không tạo được Trạm: ' + (loiTram?.message ?? ''));
+
   const { data, error } = await supabase
     .from('inspections')
     .insert({
       inspector_id: inspector.id,
+      station_id: st.id,
       doi_chieu: emptyDoiChieu(),
-      nha_thau: '',
       nguoi_lap_ho_so: '',
       nha_thau_phone: '',
       nguoi_nghiem_thu_ten: inspector.ho_ten,
@@ -403,13 +459,23 @@ export async function createInspection(): Promise<string> {
     inspections: [
       {
         id: data.id,
-        station_id: null,
+        station_id: st.id,
         inspector_id: inspector.id,
         luot_thu: null,
         so_bien_ban: null,
         status: 'draft',
+        station: {
+          id: st.id,
+          ma_tram: '',
+          ten_tram: '',
+          dia_chi: '',
+          tinh_tp: '',
+          lat: null,
+          lng: null,
+          thiet_ke_dien_hinh: '',
+          nha_thau: '',
+        },
         doi_chieu: emptyDoiChieu(),
-        nha_thau: '',
         nguoi_lap_ho_so: '',
         nha_thau_phone: '',
         nguoi_nghiem_thu_ten: inspector.ho_ten,
@@ -450,8 +516,8 @@ export async function patchInspection(id: string, patch: Partial<Inspection>) {
 
 export async function patchDoiChieu(
   id: string,
-  key: keyof DoiChieu,
-  patch: Partial<DoiChieu[keyof DoiChieu]>,
+  key: ReconcileFieldKey,
+  patch: Partial<DoiChieuRow>,
 ) {
   mutate(id, (i) => ({
     ...i,
@@ -459,6 +525,13 @@ export async function patchDoiChieu(
   }));
   const insp = inspectionById(id);
   if (insp) await supabase.from('inspections').update({ doi_chieu: insp.doi_chieu }).eq('id', id);
+}
+
+export async function patchStation(id: string, patch: Partial<StationForm>) {
+  const station = inspectionById(id)?.station;
+  if (!station) return;
+  mutate(id, (i) => (i.station ? { ...i, station: { ...i.station, ...patch } } : i));
+  await supabase.from('stations').update(patch).eq('id', station.id);
 }
 
 export async function addCabinet(id: string) {
@@ -726,6 +799,9 @@ export async function deleteInspection(id: string) {
   const { data, error } = await supabase.from('inspections').delete().eq('id', id).select('id');
   if (error) return 'Không xoá được biên bản: ' + error.message;
   if (!data?.length) return 'Không có quyền xoá biên bản này.';
+  // Hàng stations thuộc riêng biên bản này nên xoá theo; FK là restrict, phải
+  // đi sau lệnh trên. Sót lại thì chỉ là rác, không báo lỗi cho kỹ sư.
+  if (insp?.station_id) await supabase.from('stations').delete().eq('id', insp.station_id);
   db = { ...db, inspections: db.inspections.filter((i) => i.id !== id) };
   emit();
   return null;
@@ -755,10 +831,11 @@ export interface Blocker {
 export function blockers(insp: Inspection): Blocker[] {
   const out: Blocker[] = [];
 
-  const chuaDoiChieu = RECONCILE_FIELDS.filter(
-    (f) => f.required && !insp.doi_chieu[f.key].bm02.trim(),
-  ).length;
-  if (chuaDoiChieu) out.push({ buoc: 1, text: chuaDoiChieu + ' hàng đối chiếu chưa điền' });
+  const thieuTram =
+    RECONCILE_FIELDS.filter((f) => f.required && !stationValue(insp.station, f.key).trim()).length +
+    // tinh_tp không phải một dòng của RECONCILE_FIELDS, nó là ô chọn trong thẻ Địa chỉ.
+    (insp.station?.tinh_tp.trim() ? 0 : 1);
+  if (thieuTram) out.push({ buoc: 1, text: thieuTram + ' thông tin Trạm chưa điền' });
 
   // Nhà thầu giờ ghi ở hàng đối chiếu bước 1, không còn ô riêng.
   if (!insp.nguoi_lap_ho_so.trim() || !insp.nha_thau_phone.trim())
@@ -795,7 +872,9 @@ export function warnings(insp: Inspection): string[] {
   }
   const chuaKhop = RECONCILE_FIELDS.filter((f) => !insp.doi_chieu[f.key].khop);
   if (chuaKhop.length)
-    out.push('Mục 1: ' + chuaKhop.length + '/' + RECONCILE_FIELDS.length + ' hàng đối chiếu chưa tick Khớp');
+    out.push(
+      'Mục 1: ' + chuaKhop.length + '/' + RECONCILE_FIELDS.length + ' dòng chưa tick Khớp',
+    );
   return out;
 }
 
