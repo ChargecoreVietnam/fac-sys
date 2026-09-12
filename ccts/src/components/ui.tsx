@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 
 export type Tone = 'ok' | 'bad' | 'na' | 'warn' | 'brand' | 'muted';
 
@@ -114,6 +114,59 @@ export function Card({
       ) : null}
       {children}
     </section>
+  );
+}
+
+/**
+ * Ô xem trước ảnh/video bằng chứng, khung vuông.
+ *
+ * loading="lazy" là thứ làm màn biên bản nhẹ hẳn: một biên bản có thể có 40-50
+ * ảnh, tải hết ngay từ đầu là chục MB trong khi màn hình chỉ thấy vài ô. Video
+ * đặt preload="none" vì tệp 3-4MB, chỉ để lấy khung hình đầu là quá phí.
+ */
+export function Thumb({
+  url,
+  loai,
+  alt,
+}: {
+  url: string | undefined;
+  loai: 'anh' | 'video' | 'tai_lieu';
+  alt: string;
+}) {
+  const [xong, setXong] = useState(false);
+  return (
+    <span
+      className={
+        'flex aspect-square items-center justify-center ' +
+        (url && loai === 'anh' && !xong ? 'skeleton' : '')
+      }
+    >
+      {url && loai === 'anh' ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={url}
+          alt={alt}
+          loading="lazy"
+          decoding="async"
+          onLoad={() => setXong(true)}
+          onError={() => setXong(true)}
+          className="size-full object-cover"
+        />
+      ) : url && loai === 'video' ? (
+        <video
+          src={url}
+          preload="none"
+          muted
+          playsInline
+          onLoadedData={() => setXong(true)}
+          className="size-full object-cover"
+        />
+      ) : (
+        <span className="px-2 text-center text-[0.62rem] leading-tight text-ink-3">
+          {loai === 'anh' ? 'Ảnh' : loai === 'video' ? 'Video' : 'Tệp'}
+        </span>
+      )}
+    </span>
   );
 }
 

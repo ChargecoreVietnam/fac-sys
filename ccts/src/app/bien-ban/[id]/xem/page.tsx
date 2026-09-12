@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { use, useEffect, useState } from 'react';
-import { AppBar, BottomBar, Button, Loading, Page } from '@/components/ui';
+import { AppBar, BottomBar, Button, Loading, Page, Thumb } from '@/components/ui';
 import {
   CHECKLIST,
   GROUPS,
@@ -319,18 +319,7 @@ function ItemRow({
                     title={e.ten_tep}
                     className="block overflow-hidden rounded border border-line bg-card-2"
                   >
-                    <span className="flex aspect-square items-center justify-center">
-                      {url && e.loai === 'anh' ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={url} alt={e.ten_tep} className="size-full object-cover" />
-                      ) : url && e.loai === 'video' ? (
-                        <video src={url} className="size-full object-cover" muted playsInline />
-                      ) : (
-                        <span className="text-[0.6rem] text-ink-3">
-                          {e.loai === 'anh' ? 'Ảnh' : e.loai === 'video' ? 'Video' : 'Tệp'}
-                        </span>
-                      )}
-                    </span>
+                    <Thumb url={url} loai={e.loai} alt={e.ten_tep} />
                   </a>
                 );
               })}

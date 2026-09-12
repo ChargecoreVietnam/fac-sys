@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Chip, Seg, TextArea, TextInput, type Tone } from '@/components/ui';
+import { Chip, Seg, TextArea, TextInput, Thumb, type Tone } from '@/components/ui';
 import type { ChecklistItem } from '@/lib/checklist';
 import { formatBytes, readEvidence } from '@/lib/media';
 import {
@@ -280,20 +280,7 @@ export function ItemCard({
                     (dangXoaAnh === e.id ? 'animate-pulse opacity-45' : '')
                   }
                 >
-                  <div className="flex aspect-square items-center justify-center">
-                    {url && e.loai === 'anh' ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={url} alt={e.ten_tep} className="size-full object-cover" />
-                    ) : url && e.loai === 'video' ? (
-                      <video src={url} className="size-full object-cover" muted playsInline />
-                    ) : (
-                      <span className="px-2 text-center text-[0.62rem] leading-tight text-ink-3">
-                        {e.loai === 'anh' ? 'Ảnh' : e.loai === 'video' ? 'Video' : 'Tệp'}
-                        <br />
-                        đã lưu
-                      </span>
-                    )}
-                  </div>
+                  <Thumb url={url} loai={e.loai} alt={e.ten_tep} />
                   <div className="border-t border-line px-1.5 py-1">
                     <p className="tnum truncate text-[0.62rem] text-ink-3">
                       {e.duration_seconds != null
