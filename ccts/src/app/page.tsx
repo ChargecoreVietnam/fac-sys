@@ -3,7 +3,14 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { AppBar, Button, Card, LinkButton, Loading, Page } from '@/components/ui';
-import { banNhap, createInspection, deleteInspection, signOut, useDB } from '@/lib/store';
+import {
+  banNhap,
+  createInspection,
+  deleteInspection,
+  laKiemSoat,
+  signOut,
+  useDB,
+} from '@/lib/store';
 
 export default function HomePage() {
   const db = useDB();
@@ -119,6 +126,12 @@ export default function HomePage() {
         <LinkButton href="/bien-ban" variant="ghost" className="mt-3 w-full">
           Xem lịch sử biên bản
         </LinkButton>
+
+        {laKiemSoat(db.session) ? (
+          <LinkButton href="/quan-tri" variant="ghost" className="mt-2 w-full">
+            Tất cả biên bản (kiểm soát)
+          </LinkButton>
+        ) : null}
       </Page>
     </>
   );

@@ -369,6 +369,39 @@ export async function lichSuBienBan(): Promise<LichSuRow[] | null> {
   return data as LichSuRow[];
 }
 
+/** Ai được vào tab kiểm soát: admin và cse. cse chỉ xem, RLS chặn mọi lệnh ghi. */
+export const laKiemSoat = (p: Profile | null) => p?.role === 'admin' || p?.role === 'cse';
+
+export interface QuanTriRow {
+  id: string;
+  so_bien_ban: string | null;
+  ma_tram: string | null;
+  ten_tram: string | null;
+  nguoi_nghiem_thu_ten: string;
+  status: Inspection['status'];
+  created_at: string;
+  ket_luan: InspectionVerdict | null;
+  so_anh: number;
+  so_video: number;
+}
+
+/**
+ * Toàn bộ biên bản của mọi kỹ sư, cho tab kiểm soát. Đọc view inspection_summary
+ * (security_invoker) nên vẫn qua RLS; lối vào tab chỉ hiện với admin và cse.
+ * Bản nháp không lên đây - chưa nộp thì chưa có gì để kiểm soát.
+ */
+export async function tatCaBienBan(): Promise<QuanTriRow[] | null> {
+  const { data, error } = await supabase
+    .from('inspection_summary')
+    .select(
+      'id, so_bien_ban, ma_tram, ten_tram, nguoi_nghiem_thu_ten, status, created_at, ket_luan, so_anh, so_video',
+    )
+    .in('status', ['submitted', 'issued'])
+    .order('created_at', { ascending: false });
+  if (error) return null;
+  return data as QuanTriRow[];
+}
+
 // -------------------------------------------------------------- biên bản
 
 export const inspectionById = (id: string) => db.inspections.find((i) => i.id === id);

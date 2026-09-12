@@ -9,7 +9,7 @@ export interface Profile {
   id: string;
   ho_ten: string;
   chuc_vu: string;
-  role: 'se' | 'admin';
+  role: 'se' | 'cse' | 'admin';
 }
 
 /** Trạm lấy từ BM01 của Bên A. Kỹ sư chỉ đọc. */

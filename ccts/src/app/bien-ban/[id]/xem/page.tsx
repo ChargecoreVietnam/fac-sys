@@ -14,6 +14,7 @@ import {
 import {
   getResult,
   inspectionById,
+  previewOf,
   stationValue,
   taiBienBanTheoId,
   useDB,
@@ -232,9 +233,12 @@ export default function InspectionSheetPage({ params }: { params: Promise<{ id: 
       </main>
 
       <BottomBar>
-        <Button variant="ghost" onClick={() => router.push('/bien-ban/' + insp.id)}>
-          {insp.status === 'issued' ? 'Xem dữ liệu nhập' : 'Quay lại sửa'}
-        </Button>
+        {/* Biên bản của người khác thì chỉ xem - màn nhập liệu không có gì cho họ. */}
+        {insp.inspector_id === db.session.id ? (
+          <Button variant="ghost" onClick={() => router.push('/bien-ban/' + insp.id)}>
+            {insp.status === 'issued' ? 'Xem dữ liệu nhập' : 'Quay lại sửa'}
+          </Button>
+        ) : null}
         <Button onClick={() => window.print()}>In / lưu PDF</Button>
       </BottomBar>
     </>
@@ -294,12 +298,42 @@ function ItemRow({
           <span className="mt-0.5 block text-xs text-ink-2">{r.ghi_chu}</span>
         ) : null}
         {anh || video ? (
-          <span className="tnum mt-0.5 block text-xs text-ink-3">
-            {anh ? anh + ' ảnh' : ''}
-            {anh && video ? ' · ' : ''}
-            {video ? video + ' video' : ''}
-            {anh < item.minPhotos ? ' (quy cách ' + item.minPhotos + ')' : ''}
-          </span>
+          <>
+            <span className="tnum mt-0.5 block text-xs text-ink-3">
+              {anh ? anh + ' ảnh' : ''}
+              {anh && video ? ' · ' : ''}
+              {video ? video + ' video' : ''}
+              {anh < item.minPhotos ? ' (quy cách ' + item.minPhotos + ')' : ''}
+            </span>
+            <span className="mt-1.5 grid grid-cols-4 gap-1.5">
+              {r.evidence.map((e) => {
+                const url = previewOf(e.id);
+                return (
+                  <a
+                    key={e.id}
+                    href={url}
+                    target="_blank"
+                    rel="noreferrer"
+                    title={e.ten_tep}
+                    className="block overflow-hidden rounded border border-line bg-card-2"
+                  >
+                    <span className="flex aspect-square items-center justify-center">
+                      {url && e.loai === 'anh' ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={url} alt={e.ten_tep} className="size-full object-cover" />
+                      ) : url && e.loai === 'video' ? (
+                        <video src={url} className="size-full object-cover" muted playsInline />
+                      ) : (
+                        <span className="text-[0.6rem] text-ink-3">
+                          {e.loai === 'anh' ? 'Ảnh' : e.loai === 'video' ? 'Video' : 'Tệp'}
+                        </span>
+                      )}
+                    </span>
+                  </a>
+                );
+              })}
+            </span>
+          </>
         ) : null}
       </span>
       <span
