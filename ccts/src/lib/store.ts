@@ -377,6 +377,7 @@ export interface QuanTriRow {
   so_bien_ban: string | null;
   ma_tram: string | null;
   ten_tram: string | null;
+  tinh_tp: string | null;
   nguoi_nghiem_thu_ten: string;
   status: Inspection['status'];
   created_at: string;
@@ -388,15 +389,14 @@ export interface QuanTriRow {
 /**
  * Toàn bộ biên bản của mọi kỹ sư, cho tab kiểm soát. Đọc view inspection_summary
  * (security_invoker) nên vẫn qua RLS; lối vào tab chỉ hiện với admin và cse.
- * Bản nháp không lên đây - chưa nộp thì chưa có gì để kiểm soát.
+ * Lấy cả bản nháp: người kiểm soát cần thấy ai đang làm dở chứ không chỉ ai đã nộp.
  */
 export async function tatCaBienBan(): Promise<QuanTriRow[] | null> {
   const { data, error } = await supabase
     .from('inspection_summary')
     .select(
-      'id, so_bien_ban, ma_tram, ten_tram, nguoi_nghiem_thu_ten, status, created_at, ket_luan, so_anh, so_video',
+      'id, so_bien_ban, ma_tram, ten_tram, tinh_tp, nguoi_nghiem_thu_ten, status, created_at, ket_luan, so_anh, so_video',
     )
-    .in('status', ['submitted', 'issued'])
     .order('created_at', { ascending: false });
   if (error) return null;
   return data as QuanTriRow[];
@@ -915,6 +915,22 @@ export function progress(insp: Inspection) {
   const cells = allCells(insp);
   const done = cells.filter(({ code, viTri }) => getResult(insp, code, viTri).ket_qua).length;
   return { done, total: cells.length };
+}
+
+/** Nhãn và màu trạng thái biên bản. Một chỗ duy nhất cho mọi màn danh sách. */
+export const STATUS_LABEL: Record<Inspection['status'], string> = {
+  draft: 'Đang làm dở',
+  submitted: 'Đã nộp',
+  issued: 'Đã phát hành',
+};
+
+export function statusTone(
+  status: Inspection['status'],
+  ket_luan: InspectionVerdict | null,
+): 'ok' | 'bad' | 'na' | 'warn' | 'muted' {
+  if (status === 'draft') return 'muted';
+  if (status === 'submitted') return 'warn';
+  return ket_luan ? VERDICT_TONE[ket_luan] : 'muted';
 }
 
 export const VERDICT_TONE: Record<InspectionVerdict, 'ok' | 'bad' | 'na'> = {

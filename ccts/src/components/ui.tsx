@@ -34,7 +34,8 @@ export function AppBar({
 }: {
   title: ReactNode;
   sub?: ReactNode;
-  back?: string;
+  /** Đường dẫn cố định, hoặc hàm tự xử lý khi cần quay lại đúng chỗ vừa đến. */
+  back?: string | (() => void);
   right?: ReactNode;
 }) {
   const router = useRouter();
@@ -44,7 +45,7 @@ export function AppBar({
         {back ? (
           <button
             type="button"
-            onClick={() => router.push(back)}
+            onClick={() => (typeof back === 'function' ? back() : router.push(back))}
             aria-label="Quay lại"
             className="-ml-1 flex size-10 shrink-0 items-center justify-center rounded-full text-ink-2 active:bg-card-2"
           >

@@ -3,7 +3,14 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { AppBar, Card, Chip, Loading, Page } from '@/components/ui';
-import { lichSuBienBan, useDB, VERDICT_TONE, type LichSuRow } from '@/lib/store';
+import {
+  lichSuBienBan,
+  STATUS_LABEL,
+  statusTone,
+  useDB,
+  VERDICT_TONE,
+  type LichSuRow,
+} from '@/lib/store';
 
 const dt = (s: string) =>
   new Date(s).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -53,9 +60,7 @@ export default function LichSuPage() {
                     </p>
                     <p className="tnum mt-0.5 text-xs text-ink-3">{dt(r.created_at)}</p>
                   </div>
-                  <Chip tone={r.status === 'issued' ? (r.ket_luan ? VERDICT_TONE[r.ket_luan] : 'muted') : 'warn'}>
-                    {r.status === 'issued' ? 'Đã phát hành' : 'Đã nộp'}
-                  </Chip>
+                  <Chip tone={statusTone(r.status, r.ket_luan)}>{STATUS_LABEL[r.status]}</Chip>
                 </button>
               </Card>
             ))}

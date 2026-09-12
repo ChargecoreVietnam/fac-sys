@@ -68,7 +68,9 @@ export default function InspectionSheetPage({ params }: { params: Promise<{ id: 
       <AppBar
         title="Biên bản BM03"
         sub={insp.so_bien_ban}
-        back="/"
+        // Vào màn này từ lịch sử hoặc từ tab kiểm soát, back phải về đúng chỗ
+        // vừa rời. Mở thẳng URL thì không có gì để lùi, về trang chủ.
+        back={() => (window.history.length > 1 ? router.back() : router.push('/'))}
       />
 
       <main className="mx-auto w-full max-w-2xl flex-1 px-3 pb-32 pt-3">
@@ -232,15 +234,15 @@ export default function InspectionSheetPage({ params }: { params: Promise<{ id: 
         </article>
       </main>
 
-      <BottomBar>
-        {/* Biên bản của người khác thì chỉ xem - màn nhập liệu không có gì cho họ. */}
-        {insp.inspector_id === db.session.id ? (
+      {/* Biên bản của người khác thì chỉ xem - màn nhập liệu không có gì cho họ,
+          và thanh dưới cũng không còn nút nào nên bỏ luôn. */}
+      {insp.inspector_id === db.session.id ? (
+        <BottomBar>
           <Button variant="ghost" onClick={() => router.push('/bien-ban/' + insp.id)}>
             {insp.status === 'issued' ? 'Xem dữ liệu nhập' : 'Quay lại sửa'}
           </Button>
-        ) : null}
-        <Button onClick={() => window.print()}>In / lưu PDF</Button>
-      </BottomBar>
+        </BottomBar>
+      ) : null}
     </>
   );
 }
