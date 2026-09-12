@@ -386,20 +386,44 @@ export interface QuanTriRow {
   so_video: number;
 }
 
+/** Số biên bản mỗi trang của màn kiểm soát. */
+export const MOI_TRANG = 25;
+
+/** Giá trị bộ lọc cho biên bản chưa điền tỉnh - chuỗi rỗng đã là "tất cả". */
+export const TINH_TRONG = '__trong';
+
 /**
- * Toàn bộ biên bản của mọi kỹ sư, cho tab kiểm soát. Đọc view inspection_summary
- * (security_invoker) nên vẫn qua RLS; lối vào tab chỉ hiện với admin và cse.
- * Lấy cả bản nháp: người kiểm soát cần thấy ai đang làm dở chứ không chỉ ai đã nộp.
+ * Một trang biên bản của mọi kỹ sư, cho tab kiểm soát. Đọc view
+ * inspection_summary (security_invoker) nên vẫn qua RLS; lối vào tab chỉ hiện
+ * với admin và cse. Lấy cả bản nháp: người kiểm soát cần thấy ai đang làm dở
+ * chứ không chỉ ai đã nộp.
+ *
+ * Lọc và cắt trang đều ở máy chủ - view có lateral đếm bằng chứng cho từng
+ * hàng, kéo cả bảng về rồi cắt ở trình duyệt là bắt Postgres đếm thừa.
  */
-export async function tatCaBienBan(): Promise<QuanTriRow[] | null> {
-  const { data, error } = await supabase
+export async function tatCaBienBan(
+  trang = 0,
+  tinh = '',
+  trangThai = '',
+): Promise<{ rows: QuanTriRow[]; tong: number } | null> {
+  let q = supabase
     .from('inspection_summary')
     .select(
       'id, so_bien_ban, ma_tram, ten_tram, tinh_tp, nguoi_nghiem_thu_ten, status, created_at, ket_luan, so_anh, so_video',
-    )
-    .order('created_at', { ascending: false });
+      { count: 'exact' },
+    );
+  // Các điều kiện chồng nhau bằng AND - PostgREST nối mọi .eq/.is trên cùng
+  // một query bằng AND, không cần .and() tường minh.
+  if (tinh === TINH_TRONG) q = q.is('tinh_tp', null);
+  else if (tinh) q = q.eq('tinh_tp', tinh);
+  if (trangThai) q = q.eq('status', trangThai);
+
+  const tu = trang * MOI_TRANG;
+  const { data, count, error } = await q
+    .order('created_at', { ascending: false })
+    .range(tu, tu + MOI_TRANG - 1);
   if (error) return null;
-  return data as QuanTriRow[];
+  return { rows: data as QuanTriRow[], tong: count ?? 0 };
 }
 
 // -------------------------------------------------------------- biên bản
